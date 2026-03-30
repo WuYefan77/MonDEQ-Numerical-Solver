@@ -11,13 +11,13 @@ Traditional sequential solvers suffer from a massive latency period where downst
 As shown below, our method achieves $10^{-5}$ precision while the baseline is still at $10^0$, making it ideal for low-latency neuromorphic hardware.
 
 ![Anytime Convergence](assets/convergence_analysis.pdf) 
-*(Replace with your actual relative path)*
+
 
 ### 2. The Power of Inexact Splitting ($1588\times$ Speedup)
 A key theoretical discovery is that **inner-loop convergence is unnecessary**. By relaxing the internal accuracy to a single proximal step ($k=1$), we reduce the total computational operations by a factor of **1588x** without sacrificing the final $10^{-14}$ accuracy. Global synchronization proves vastly superior to local precision.
 
 ![1588x Efficiency](assets/speedup_1588x_benchmark.pdf)
-*(Replace with your actual relative path)*
+
 
 ## 💻 The Core Solver
 
