@@ -8,7 +8,7 @@ Unlike naive cascade solvers that fail to reduce global error until individual b
 
 * 📉 **Convergence Analysis**: [View Anytime Convergence Plot](./assets/convergence_analysis.pdf)
 * 🏎️ **Speedup Metrics**: [View 1588x Benchmark Report](./assets/speedup_1588x_benchmark.pdf)
-* 🎓 **Theoretical Framework**: [View Research Poster (MTNS 2026 Submission) ](./assets/research_poster.pdf)
+* 🎓 **Theoretical Framework**: [View Research Poster  ](./assets/research_poster.pdf)
 
 *(Note: The above PDF links contain detailed visual benchmarks and theoretical proofs.)*
 
