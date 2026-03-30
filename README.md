@@ -26,17 +26,23 @@ We provide a highly decoupled, OOP-based solver engine that is ready for industr
 
 ```python
 import torch
-from src.splitting_solver import MonDEQSolver
+from src.mondeq_solver import MonDEQSolver
 
 # 1. Initialize the high-precision solver (Float64 for 10^-14 precision)
 solver = MonDEQSolver(alpha_base=0.1, dtype=torch.float64)
 
-# 2. Execute the Two-Loop Splitting algorithm
-u, v, error_history = solver.solve_splitting_k1(
+# 2. Mock some system matrices (Example dimensions: N=10, U_IN=3)
+# (In practice, replace these with your actual MonDEQ weights)
+H1, B1, H2, B2 = torch.eye(10), torch.randn(10, 3), torch.eye(8), torch.randn(8, 5)
+C1, D1 = torch.randn(5, 10), torch.randn(5, 3)
+u_ext = torch.randn(3, 1)
+
+# 3. Execute the pure Two-Loop Splitting algorithm
+u, v = solver.solve(
     H1, B1, H2, B2, C1, D1, u_ext,
     sigma_val=1.5,
     target_tol=1e-10,
     max_iter=5000
 )
 
-print(f"Convergence reached in {len(error_history)} steps.")
+print(f"Convergence achieved! Latent state u shape: {u.shape}, v shape: {v.shape}")
