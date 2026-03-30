@@ -14,7 +14,7 @@ Unlike naive cascade solvers that fail to reduce global error until individual b
 
 ## ⚙️ Mathematical Engine
 
-The core logic, implemented in `src/splitting_solver.py`, completely decouples the block updates. By utilizing analytical resolvents, the step updates for the latent states $u$ and $v$ are computed as follows:
+The core logic, implemented in `src/mondeq_solver.py`, completely decouples the block updates. By utilizing analytical resolvents, the step updates for the latent states $u$ and $v$ are computed as follows:
 
 $$u^{(k+1)} = \mathrm{ReLU} \left( u^{(k)} - \eta_{safe} \left( (I + \alpha H_1)u^{(k)} - (u^{(k)} - \alpha B_1 u_{ext}) \right) \right)$$
 
