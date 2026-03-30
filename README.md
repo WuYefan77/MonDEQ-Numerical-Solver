@@ -1,48 +1,40 @@
-# MonDEQ Numerical Solver: Two-Loop Splitting 🚀
+# High-Efficiency Solvers for Cascaded Monotone Operator Equilibrium Networks (MonDEQs)
 
-A high-precision and ultrafast numerical solver for Monotone Equilibrium Networks (MonDEQs). By introducing a novel **Two-Loop Splitting ($k=1$)** algorithm, this solver achieves **machine-limit precision ($10^{-14}$)** and a **1588x computational speedup** compared to traditional sequential methods.
+This repository provides an industrial-grade, PyTorch-based numerical solver for Deep Analog Neural Networks (specifically, Cascaded MonDEQs). 
 
-## 📊 Performance & Anytime Convergence
+By leveraging **Operator Splitting Theory (Eckstein 1989)**, we replace traditional sequential solving methods with a simultaneous **Two-Loop Splitting** architecture. This mathematical framework guarantees global convergence while achieving machine-level precision ($10^{-14}$).
 
-Unlike naive cascade solvers that fail to reduce global error until individual blocks converge, our inexact splitting mechanism ensures monotonic error decay from the very first iteration.
+## 🚀 Key Innovations
 
-* 📉 **Convergence Analysis**: [View Anytime Convergence Plot](./assets/convergence_analysis.pdf)
-* 🏎️ **Speedup Metrics**: [View 1588x Benchmark Report](./assets/speedup_1588x_benchmark.pdf)
-* 🎓 **Theoretical Framework**: [View Research Poster  ](./assets/research_poster.pdf)
+### 1. Eliminating the Computational "Dead Zone" (Anytime Convergence)
+Traditional sequential solvers suffer from a massive latency period where downstream layers wait idly for upstream layers to converge. Our splitting algorithm enables **immediate, simultaneous updates** across all layers.
+As shown below, our method achieves $10^{-5}$ precision while the baseline is still at $10^0$, making it ideal for low-latency neuromorphic hardware.
 
-*(Note: The above PDF links contain detailed visual benchmarks and theoretical proofs.)*
+![Anytime Convergence](assets/convergence_analysis.pdf) 
+*(Replace with your actual relative path)*
 
-## ⚙️ Mathematical Engine
+### 2. The Power of Inexact Splitting ($1588\times$ Speedup)
+A key theoretical discovery is that **inner-loop convergence is unnecessary**. By relaxing the internal accuracy to a single proximal step ($k=1$), we reduce the total computational operations by a factor of **1588x** without sacrificing the final $10^{-14}$ accuracy. Global synchronization proves vastly superior to local precision.
 
-The core logic, implemented in `src/mondeq_solver.py`, completely decouples the block updates. By utilizing analytical resolvents, the step updates for the latent states $u$ and $v$ are computed as follows:
+![1588x Efficiency](assets/speedup_1588x_benchmark.pdf)
+*(Replace with your actual relative path)*
 
-$$u^{(k+1)} = \mathrm{ReLU} \left( u^{(k)} - \eta_{safe} \left( (I + \alpha H_1)u^{(k)} - (u^{(k)} - \alpha B_1 u_{ext}) \right) \right)$$
+## 💻 The Core Solver
 
-By limiting the inner iterative loop to a single step ($k=1$), we bypass the dense computational bottleneck of exact block solutions while strictly preserving the global fixed-point equivalence. 
-
-## 💻 Quick Start (API Usage)
-
-We provide a highly decoupled, OOP-based solver engine that is ready for industrial deployment.
+The solver is designed for stability under strong coupling regimes ($\sigma \ge 1.5$) where standard global solvers often lose monotonicity and fail. It dynamically computes a safe Lipschitz-based step size to prevent numerical explosion.
 
 ```python
-import torch
-from src.mondeq_solver import MonDEQSolver
+# A minimal example of the solver's API
+from solver import MonDEQSolver
 
-# 1. Initialize the high-precision solver (Float64 for 10^-14 precision)
-solver = MonDEQSolver(alpha_base=0.1, dtype=torch.float64)
+# Initialize the engine (Float64 is recommended for machine-limit precision)
+solver = MonDEQSolver(alpha_base=0.1)
 
-# 2. Mock some system matrices (Example dimensions: N=10, U_IN=3)
-# (In practice, replace these with your actual MonDEQ weights)
-H1, B1, H2, B2 = torch.eye(10), torch.randn(10, 3), torch.eye(8), torch.randn(8, 5)
-C1, D1 = torch.randn(5, 10), torch.randn(5, 3)
-u_ext = torch.randn(3, 1)
-
-# 3. Execute the pure Two-Loop Splitting algorithm
-u, v = solver.solve(
-    H1, B1, H2, B2, C1, D1, u_ext,
-    sigma_val=1.5,
-    target_tol=1e-10,
-    max_iter=5000
+# Execute the Two-Loop Splitting (k=1) algorithm
+# H1, H2: Resistive networks (Strongly Monotone)
+# B, C, D: Coupling and input matrices
+u_state, v_state = solver.solve(
+    H1, B1, H2, B2, C1, D1, u_ext, 
+    sigma_val=1.5, 
+    target_tol=1e-10
 )
-
-print(f"Convergence achieved! Latent state u shape: {u.shape}, v shape: {v.shape}")
