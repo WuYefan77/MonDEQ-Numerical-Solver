@@ -4,7 +4,7 @@ This repository provides an industrial-grade, PyTorch-based numerical solver for
 
 By leveraging **Operator Splitting Theory (Eckstein 1989)**, we replace traditional sequential solving methods with a simultaneous **Two-Loop Splitting** architecture. This mathematical framework guarantees global convergence while achieving machine-level precision ($10^{-14}$).
 
-## 🚀 Key Innovations
+## Key Innovations
 
 ### 1. Eliminating the Computational "Dead Zone" (Anytime Convergence)
 Traditional sequential solvers suffer from a massive latency period where downstream layers wait idly for upstream layers to converge. Our splitting algorithm enables **immediate, simultaneous updates** across all layers.
@@ -19,7 +19,7 @@ A key theoretical discovery is that **inner-loop convergence is unnecessary**. B
 ![1588x Efficiency](assets/speedup_1588x_benchmark.pdf)
 
 
-## 💻 The Core Solver
+## The Core Solver
 
 The solver is designed for stability under strong coupling regimes ($\sigma \ge 1.5$) where standard global solvers often lose monotonicity and fail. It dynamically computes a safe Lipschitz-based step size to prevent numerical explosion.
 
