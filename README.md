@@ -1,40 +1,152 @@
-# High-Efficiency Solvers for Cascaded Monotone Operator Equilibrium Networks (MonDEQs)
+# MonDEQ Numerical Solver
 
-This repository provides an industrial-grade, PyTorch-based numerical solver for Deep Analog Neural Networks (specifically, Cascaded MonDEQs). 
+A compact PyTorch implementation of the two-block projected fixed-point
+iteration used in a University of Sydney 2025/26 Vacation Research Internship
+investigation of cascaded monotone equilibrium networks.
 
-By leveraging **Operator Splitting Theory (Eckstein 1989)**, we replace traditional sequential solving methods with a simultaneous **Two-Loop Splitting** architecture. This mathematical framework guarantees global convergence while achieving machine-level precision ($10^{-14}$).
+This public repository contains the solver core, a deterministic usage example
+and selected figures from the research project. The benchmark-generation
+scripts and the complete experimental pipeline are not included.
 
-## Key Innovations
+## Scope
 
-### 1. Eliminating the Computational "Dead Zone" (Anytime Convergence)
-Traditional sequential solvers suffer from a massive latency period where downstream layers wait idly for upstream layers to converge. Our splitting algorithm enables **immediate, simultaneous updates** across all layers.
-As shown below, our method achieves $10^{-5}$ precision while the baseline is still at $10^0$, making it ideal for low-latency neuromorphic hardware.
+For each outer iteration, the implementation:
 
-![Anytime Convergence](assets/convergence_analysis.pdf) 
+1. updates the first non-negative equilibrium state;
+2. constructs a forward-coupled input from that updated state; and
+3. updates the second non-negative equilibrium state.
 
+The code uses a block step size derived from the spectral norms of
+`I + alpha * H1` and `I + alpha * H2`. That calculation does not include all
+coupling matrices, so convergence still depends on the supplied problem and
+its mathematical assumptions. The solver reports both consecutive-state
+change and the fixed-point residual of the implemented iteration map.
 
-### 2. The Power of Inexact Splitting ($1588\times$ Speedup)
-A key theoretical discovery is that **inner-loop convergence is unnecessary**. By relaxing the internal accuracy to a single proximal step ($k=1$), we reduce the total computational operations by a factor of **1588x** without sacrificing the final $10^{-14}$ accuracy. Global synchronization proves vastly superior to local precision.
+## Installation
 
-![1588x Efficiency](assets/speedup_1588x_benchmark.pdf)
+Clone the repository and install it in editable mode:
 
+```bash
+git clone https://github.com/WuYefan77/MonDEQ-Numerical-Solver.git
+cd MonDEQ-Numerical-Solver
+python -m pip install -e .
+```
 
-## The Core Solver
+Python 3.10 or later and PyTorch 2.0 or later are required.
 
-The solver is designed for stability under strong coupling regimes ($\sigma \ge 1.5$) where standard global solvers often lose monotonicity and fail. It dynamically computes a safe Lipschitz-based step size to prevent numerical explosion.
+## Quick start
 
 ```python
-# A minimal example of the solver's API
-from solver import MonDEQSolver
+import torch
 
-# Initialize the engine (Float64 is recommended for machine-limit precision)
-solver = MonDEQSolver(alpha_base=0.1)
+from mondeq_solver import MonDEQSolver
 
-# Execute the Two-Loop Splitting (k=1) algorithm
-# H1, H2: Resistive networks (Strongly Monotone)
-# B, C, D: Coupling and input matrices
-u_state, v_state = solver.solve(
-    H1, B1, H2, B2, C1, D1, u_ext, 
-    sigma_val=1.5, 
-    target_tol=1e-10
+dtype = torch.float64
+identity = torch.eye(2, dtype=dtype)
+external_input = -torch.ones(2, 1, dtype=dtype)
+
+solver = MonDEQSolver(alpha_base=0.1, dtype=dtype)
+result = solver.solve(
+    H1=identity,
+    B1=identity,
+    H2=identity,
+    B2=identity,
+    C1=identity,
+    D1=identity,
+    u_ext=external_input,
+    sigma_val=1.5,
+    target_tol=1e-12,
+    return_info=True,
 )
+
+print(result.converged, result.iterations, result.residual_norm)
+print(result.u, result.v)
+```
+
+The historical tuple interface remains available when `return_info` is left at
+its default value:
+
+```python
+u_state, v_state = solver.solve(
+    identity,
+    identity,
+    identity,
+    identity,
+    identity,
+    identity,
+    external_input,
+)
+```
+
+By default, exhausting `max_iter` raises `ConvergenceError` instead of silently
+returning an unconverged state. Set `raise_on_nonconvergence=False` together
+with `return_info=True` when you want to inspect a non-converged result.
+
+### Tensor dimensions
+
+For first-block size `n1`, second-block size `n2`, external-input size `m` and
+coupling size `q`, the required shapes are:
+
+| Tensor | Shape |
+| --- | --- |
+| `H1` | `(n1, n1)` |
+| `B1` | `(n1, m)` |
+| `H2` | `(n2, n2)` |
+| `B2` | `(n2, q)` |
+| `C1` | `(q, n1)` |
+| `D1` | `(q, m)` |
+| `u_ext` | `(m,)` or `(m, 1)` |
+
+All tensors must be finite floating-point values on the same device. Inputs are
+converted to the solver's configured floating-point dtype.
+
+## Selected research results
+
+The figures below are retained outputs from the project's complete research
+workflow. They document particular experimental configurations. The underlying
+benchmark-generation scripts are maintained separately and are not part of
+this public release.
+
+### Workload-to-tolerance comparison
+
+![Workload-to-tolerance comparison](assets/convergence_analysis.png)
+
+[Download the original PDF](assets/convergence_analysis.pdf)
+
+### Inner-update comparison
+
+![Comparison of k=1 and k=100](assets/speedup_1588x_benchmark.png)
+
+[Download the original PDF](assets/speedup_1588x_benchmark.pdf)
+
+In the reported `k=1` versus `k=100` experiment, the `1588x` figure is an
+update-count comparison derived from the recorded outer-iteration counts. It
+should not be interpreted as a general wall-clock or hardware speedup.
+
+The full research poster provides the project motivation, experimental context
+and references:
+
+- [Research poster (PDF)](assets/research_poster.pdf)
+
+## Repository layout
+
+```text
+src/mondeq_solver/   Installable solver package
+examples/            Deterministic usage example
+tests/               Validation and convergence tests
+assets/              Selected project figures and poster
+```
+
+## Development
+
+Install the test dependency and run the checks:
+
+```bash
+python -m pip install -e ".[test]"
+python -m pytest
+python examples/basic_usage.py
+```
+
+## License
+
+Released under the [MIT License](LICENSE).
