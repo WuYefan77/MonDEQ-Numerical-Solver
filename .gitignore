@@ -14,6 +14,16 @@ dist/
 sdist/
 wheel/
 egg-info/
+*.egg-info/
+
+# Test / coverage caches
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
 
 # macOS
 .DS_Store
